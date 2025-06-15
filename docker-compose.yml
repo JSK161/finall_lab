@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  portfolio:
+    image: kaiza20232064/finall_lab
+    build: .
+    ports:
+      - "8080:80"
+    restart: always
+    
+  todo-app:
+    image: docker/getting-started
+    ports:
+      - "8081:80"
+    restart: always
