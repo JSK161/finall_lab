@@ -1,33 +1,41 @@
-name: Deploy Personal Website
+name: Deploy Portfolio and Todo App
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+
 jobs:
-  docker:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      # 1. 检出代码
+      - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+
+      # 2. 设置Docker构建环境
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Login to DockerHub
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      # 3. 登录Docker Hub
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
-      - name: prepare the docker-compose run
-        run: |
-          ls -l
-      - name: Build and push
+
+      # 4. 构建并推送个人作品集镜像（根据docker-compose.yml中的服务名）
+      - name: Build and push Portfolio
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/234-deploylab-frontend:latest
-      - name: copy file via ssh password
+          tags: |
+            kaiza20232064/finall_lab:latest
+            kaiza20232064/finall_lab:${{ github.sha }}
+
+      # 5. 传输docker-compose文件到服务器
+      - name: Upload compose file
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HOST_SERVER }}
@@ -35,8 +43,10 @@ jobs:
           key: ${{ secrets.HOST_SSH_PRIVATE_KEY }}
           port: 22
           source: "docker-compose.yml"
-          target: "/home/ubuntu/frontend"
-      - name: docker compose
+          target: "/home/ubuntu/app-deployment/"
+
+      # 6. 在服务器上执行部署命令
+      - name: Run Docker Compose
         uses: appleboy/ssh-action@v1.2.1
         with:
           host: ${{ secrets.HOST_SERVER }}
@@ -44,9 +54,15 @@ jobs:
           key: ${{ secrets.HOST_SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            cd /home/ubuntu/frontend
-            echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login --username ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
-            docker compose down
-            docker compose pull
-            docker compose up -d
-            rm -rf /home/ubuntu/frontend
+            cd /home/ubuntu/app-deployment
+            echo ">>> Stopping old containers..."
+            docker compose down || true
+            
+            echo ">>> Pulling Todo app image..."
+            docker pull docker/getting-started
+            
+            echo ">>> Starting services..."
+            docker compose up -d --build portfolio
+            
+            echo ">>> Deployment status:"
+            docker ps -a | grep -E 'portfolio|todo-app'
