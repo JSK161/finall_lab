@@ -1,61 +1,35 @@
-name: Deploy Portfolio and Todo App
+name: Deploy to Server
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
-
-      - name: Build and push Portfolio image
-        env:
-          IMAGE_NAME: kaiza20232064/finall_lab
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            - ${{ env.IMAGE_NAME }}:latest
-            - ${{ env.IMAGE_NAME }}:${{ github.sha }}
-
-      - name: Upload docker-compose file
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.HOST_SERVER }}
-          username: ${{ secrets.HOST_USER_NAME }}
-          key: ${{ secrets.HOST_SSH_PRIVATE_KEY }}
-          debug: true
-          port: 22
-          source: docker-compose.yml
-          target: /home/ubuntu/app-deployment/
-
-      - name: Deploy services on server
-        uses: appleboy/ssh-action@v1.2.1
-        with:
-          host: ${{ secrets.HOST_SERVER }}
-          username: ${{ secrets.HOST_USER_NAME }}
-          key: ${{ secrets.HOST_SSH_PRIVATE_KEY }}
-          port: 22
-          script: |
-            - cd /home/ubuntu/app-deployment
-            - docker compose down || true
-            - docker pull docker/getting-started
-            - docker compose up -d --build portfolio
-            - docker ps -a | grep -E 'portfolio|todo-app'
+    - uses: actions/checkout@v2
+    
+    - name: Login to Docker Hub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
+    
+    - name: Build and push
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: true
+        tags: your-dockerhub-username/lab12-app:latest
+    
+    - name: SSH and deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST_SERVER }}
+        username: ${{ secrets.SSH_USER_NAME }}
+        key: ${{ secrets.HOST_SSH_PRIVATE_KEY }}
+        script: |
+          docker-compose down
+          docker-compose pull
+          docker-compose up -d
