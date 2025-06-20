@@ -2,15 +2,15 @@ version: '3.8'
 
 services:
   personal-website:
-    image: your-dockerhub-username/lab12-app:latest
+    image: kaiza20232064/finall_lab:latest
     container_name: personal-website
     ports:
       - "8080:80"
     restart: always
   
   todo-app:
-    image: docker/getting-started
+    image: dockersamples/101-todo-app:latest
     container_name: todo-app
     ports:
-      - "8081:80"
+      - "8081:3000"
     restart: always
