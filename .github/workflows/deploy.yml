@@ -31,7 +31,7 @@ jobs:
         with:
           context: .
           push: true
-          tags:
+          tags: |
             - ${{ env.IMAGE_NAME }}:latest
             - ${{ env.IMAGE_NAME }}:${{ github.sha }}
 
@@ -53,7 +53,7 @@ jobs:
           username: ${{ secrets.HOST_USER_NAME }}
           key: ${{ secrets.HOST_SSH_PRIVATE_KEY }}
           port: 22
-          script:
+          script: |
             - cd /home/ubuntu/app-deployment
             - docker compose down || true
             - docker pull docker/getting-started
