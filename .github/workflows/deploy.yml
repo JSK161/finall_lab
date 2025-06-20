@@ -21,7 +21,7 @@ jobs:
       with:
         context: .
         push: true
-        tags: your-dockerhub-username/lab12-app:latest
+        tags: kaiza20232064/finall_lab:latest
     
     - name: SSH and deploy
       uses: appleboy/ssh-action@master
