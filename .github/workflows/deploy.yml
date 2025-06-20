@@ -54,7 +54,6 @@ jobs:
       run: |
         mkdir -p dist
         cp index.html dist/
-        cp todo.html dist/
         
         # 创建功能完整的静态todo应用
         cat > dist/todo-app.html << 'EOF'
