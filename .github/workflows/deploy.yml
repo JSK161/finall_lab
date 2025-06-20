@@ -17,7 +17,7 @@ jobs:
         password: ${{ secrets.DOCKER_HUB_TOKEN }}
     
     - name: Build and push
-      uses: docker/build-push-action@v2
+      uses: docker/build-push-action@v3
       with:
         context: .
         push: true
@@ -30,7 +30,31 @@ jobs:
         username: ${{ secrets.SSH_USER_NAME }}
         key: ${{ secrets.HOST_SSH_PRIVATE_KEY }}
         script: |
-          docker-compose version
+          # 1. 安装Docker（如果不存在）
+          if ! command -v docker &> /dev/null; then
+            echo "安装Docker..."
+            sudo apt-get update
+            sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+            sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+            sudo apt-get update
+            sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+            sudo usermod -aG docker $USER
+          fi
+          
+          # 2. 安装Docker Compose（如果不存在）
+          if ! command -v docker-compose &> /dev/null; then
+            echo "安装Docker Compose..."
+            sudo curl -L "https://github.com/docker/compose/releases/download/v2.23.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+            sudo chmod +x /usr/local/bin/docker-compose
+            sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+          fi
+          
+          # 3. 验证安装
+          docker --version
+          docker-compose --version
+          
+          # 4. 部署应用
           docker-compose down || true
           docker-compose pull
           docker-compose up -d
